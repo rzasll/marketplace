@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Checkout — Bolen & Es Teler</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header container">
+    <div class="brand"><a href="index.html">Bolen & Es Teler</a></div>
+  </header>
+
+  <main class="container">
+    <section class="section">
+      <h1>Checkout</h1>
+      <div id="checkoutArea">
+        <div id="checkoutItems"></div>
+
+        <form id="checkoutForm">
+          <label>Nama lengkap <input name="name" required /></label>
+          <label>Nomor HP <input name="phone" required /></label>
+          <label>Alamat / Catatan pengantaran <textarea name="address" rows="3"></textarea></label>
+          <label>Mode pengiriman
+            <select name="delivery">
+              <option value="ambil">Ambil di toko</option>
+              <option value="antar">Antar</option>
+            </select>
+          </label>
+          <div class="checkout-actions">
+            <div>Total: <strong id="checkoutTotal">Rp 0</strong></div>
+            <button class="btn primary" id="sendOrder">Kirim ke WhatsApp</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer container">
+    <small>&copy; <span id="yearChk"></span> Bolen & Es Teler</small>
+  </footer>
+
+  <script src="common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initCommon();
+      renderCheckout();
+      document.getElementById('yearChk').textContent = new Date().getFullYear();
+
+      document.getElementById('sendOrder').addEventListener('click', (e) => {
+        e.preventDefault();
+        const form = document.getElementById('checkoutForm');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+        const fd = new FormData(form);
+        const data = {
+          name: fd.get('name'),
+          phone: fd.get('phone'),
+          address: fd.get('address') || '-',
+          delivery: fd.get('delivery')
+        };
+        sendOrderViaWhatsApp(data);
+      });
+    });
+
+    function renderCheckout(){
+      const items = getCart();
+      const container = document.getElementById('checkoutItems');
+      container.innerHTML = '';
+      if (items.length === 0) {
+        container.innerHTML = '<p class="muted">Keranjang kosong. Tambahkan produk sebelum checkout.</p>';
+      } else {
+        items.forEach(it => {
+          const el = document.createElement('div');
+          el.className = 'checkout-item';
+          el.innerHTML = `<div>${it.emoji} <strong>${it.label}</strong> x${it.qty}</div><div>${formatRp(it.price * it.qty)}</div>`;
+          container.appendChild(el);
+        });
+      }
+      document.getElementById('checkoutTotal').textContent = formatRp(cartTotal());
+    }
+
+    function sendOrderViaWhatsApp(customer){
+      const items = getCart();
+      if (items.length === 0) return alert('Keranjang kosong.');
+      let msg = `*Pesanan dari ${customer.name}*%0A`;
+      msg += `No HP: ${customer.phone}%0A`;
+      msg += `Alamat: ${customer.address}%0A`;
+      msg += `Mode: ${customer.delivery}%0A%0A`;
+      msg += `*Detail:*%0A`;
+      items.forEach(it => {
+        msg += `- ${it.label} x${it.qty} = ${formatRp(it.price * it.qty)}%0A`;
+      });
+      msg += `%0ATotal: ${formatRp(cartTotal())}%0A`;
+      msg += `%0ATerima kasih, mohon konfirmasi ya kak.`;
+      window.open(waUrl(msg), '_blank');
+    }
+  </script>
+</body>
+</html>

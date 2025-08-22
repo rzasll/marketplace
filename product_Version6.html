@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Detail Produk — Bolen & Es Teler</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header container">
+    <div class="brand"><a href="index.html">Bolen & Es Teler</a></div>
+    <div class="top-controls">
+      <a href="products.html" class="nav-link">Produk</a>
+      <button id="cartToggleProd" class="icon-btn">🛒 <span id="topCartCountProd">0</span></button>
+      <button id="menuToggleProd" class="icon-btn">⋯</button>
+    </div>
+  </header>
+
+  <main class="container" id="productPage">
+    <!-- filled by JS -->
+  </main>
+
+  <footer class="site-footer container">
+    <small>&copy; <span id="yearProd"></span> Bolen & Es Teler</small>
+  </footer>
+
+  <script src="common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initCommon();
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      const products = await fetchProducts();
+      const p = products.find(x => x.id === id) || products[0];
+      const main = document.getElementById('productPage');
+
+      const container = document.createElement('div');
+      container.className = 'product-detail';
+
+      container.innerHTML = `
+        <div class="pd-media">${p.emoji}</div>
+        <div class="pd-info">
+          <h1>${p.name}</h1>
+          <div class="price">${formatRp(p.price)}</div>
+          <p class="muted">${p.description}</p>
+        </div>
+      `;
+      if (p.variants && p.variants.length){
+        const sel = document.createElement('select');
+        sel.id = 'variantSelect';
+        p.variants.forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+        container.querySelector('.pd-info').appendChild(sel);
+      }
+      // qty & actions
+      const controls = document.createElement('div');
+      controls.className = 'pd-actions';
+      controls.innerHTML = `
+        <input id="pdQty" type="number" value="1" min="1" class="qty-input" />
+        <button id="pdBuy" class="btn primary">Beli Sekarang</button>
+        <button id="pdAdd" class="btn outline">Tambah ke Keranjang</button>
+      `;
+      container.appendChild(controls);
+      main.appendChild(container);
+
+      document.getElementById('pdBuy').addEventListener('click', () => {
+        const variant = document.getElementById('variantSelect')?.value || null;
+        const qty = parseInt(document.getElementById('pdQty').value || 1, 10);
+        buyNow(p, variant, qty);
+      });
+      document.getElementById('pdAdd').addEventListener('click', () => {
+        const variant = document.getElementById('variantSelect')?.value || null;
+        const qty = parseInt(document.getElementById('pdQty').value || 1, 10);
+        addToCart(p.id, variant, qty);
+        alert('Ditambahkan ke keranjang');
+        refreshTopCart();
+      });
+
+      document.getElementById('yearProd').textContent = new Date().getFullYear();
+    });
+  </script>
+</body>
+</html>
